@@ -17,7 +17,7 @@ import('classes.plugins.ImportExportPlugin');
 import('lib.pkp.classes.xml.XMLCustomWriter');
 import('classes.file.ArticleFileManager');
 import('classes.file.PublicFileManager');
-import('plugins.pubids.doi.DOIPubIdPlugin');
+
 
 class CopernicusExportPlugin extends ImportExportPlugin
 {
@@ -84,9 +84,6 @@ class CopernicusExportPlugin extends ImportExportPlugin
 
     function &generateIssueDom(&$doc, &$journal, &$issue)
     {
-
-        define('JATS_DEFAULT_EXPORT_LOCALE', 'en_US');
-
         $issn = $journal->getSetting('printIssn');
 
         $root =& XMLCustomWriter::createElement($doc, 'ici-import');
@@ -105,6 +102,7 @@ class CopernicusExportPlugin extends ImportExportPlugin
         $publishedArticleDao =& DAORegistry::getDAO('PublishedArticleDAO');
         $articleFileDao =& DAORegistry::getDAO('ArticleFileDAO');
         $publicFileManager = new PublicFileManager();
+        $this->import('.DOIPubIdPlugin');
         $doiplugin = new DOIPubIdPlugin();
         foreach ($sectionDao->getSectionsForIssue($issue->getId()) as $section) {
 
@@ -154,95 +152,26 @@ class CopernicusExportPlugin extends ImportExportPlugin
 
                     $index++;
                 }
+                $citation_text = $article->getData('citations');
+
+                if ($citation_text) {
+                    $citation_arr = explode("\n", $citation_text);
+                    $references_elem = XMLCustomWriter::createChildWithText($doc, $article_elem, 'references', '', true);
+                    $index = 1;
+                    foreach ($citation_arr as $citation) {
+                        if ($citation == "") continue;
+                        $reference_elem = XMLCustomWriter::createChildWithText($doc, $references_elem, 'reference', '', true);
+                        XMLCustomWriter::createChildWithText($doc, $reference_elem, 'unparsedContent', $citation, true);
+                        XMLCustomWriter::createChildWithText($doc, $reference_elem, 'order', $index, true);
+                        XMLCustomWriter::createChildWithText($doc, $reference_elem, 'doi', '', true);
+                        $index++;
+                    }
+                }
 
             }
         }
         return $root;
-        //NativeExportDom::generatePubId($doc, $root, $issue, $issue);
-        XMLCustomWriter::setAttribute($root, 'published', $issue->getPublished() ? 'true' : 'false');
-        switch (
-            (int)$issue->getShowVolume() .
-            (int)$issue->getShowNumber() .
-            (int)$issue->getShowYear() .
-            (int)$issue->getShowTitle()
-        ) {
-            case '1110':
-                $idType = 'num_vol_year';
-                break;
-            case '1010':
-                $idType = 'vol_year';
-                break;
-            case '0010':
-                $idType = 'year';
-                break;
-            case '1000':
-                $idType = 'vol';
-                break;
-            case '0001':
-                $idType = 'title';
-                break;
-            default:
-                $idType = null;
-        }
-        XMLCustomWriter::setAttribute($root, 'identification', $idType, false);
-        XMLCustomWriter::setAttribute($root, 'current', $issue->getCurrent() ? 'true' : 'false');
-        XMLCustomWriter::setAttribute($root, 'public_id', $issue->getPubId('publisher-id'), false);
-        if (is_array($issue->getTitle(null))) {
-            foreach ($issue->getTitle(null) as $locale => $title) {
-                $titleNode =& XMLCustomWriter::createChildWithText($doc, $root, 'title', $title, false);
-                if ($titleNode) XMLCustomWriter::setAttribute($titleNode, 'locale', $locale);
-                unset($titleNode);
-            }
-        }
-        if (is_array($issue->getDescription(null))) foreach ($issue->getDescription(null) as $locale => $description) {
-            $descriptionNode =& XMLCustomWriter::createChildWithText($doc, $root, 'description', $description, false);
-            if ($descriptionNode) XMLCustomWriter::setAttribute($descriptionNode, 'locale', $locale);
-            unset($descriptionNode);
-        }
-        XMLCustomWriter::createChildWithText($doc, $root, 'volume', $issue->getVolume(), false);
-        XMLCustomWriter::createChildWithText($doc, $root, 'number', $issue->getNumber(), false);
-        XMLCustomWriter::createChildWithText($doc, $root, 'year', $issue->getYear(), false);
-        if (is_array($issue->getShowCoverPage(null))) foreach (array_keys($issue->getShowCoverPage(null)) as $locale) {
-            if ($issue->getShowCoverPage($locale)) {
-                $coverNode =& XMLCustomWriter::createElement($doc, 'cover');
-                XMLCustomWriter::appendChild($root, $coverNode);
-                XMLCustomWriter::setAttribute($coverNode, 'locale', $locale);
-                XMLCustomWriter::createChildWithText($doc, $coverNode, 'caption', $issue->getCoverPageDescription($locale), false);
-                $coverFile = $issue->getFileName($locale);
-                if ($coverFile != '') {
-                    $imageNode =& XMLCustomWriter::createElement($doc, 'image');
-                    XMLCustomWriter::appendChild($coverNode, $imageNode);
-                    import('classes.file.PublicFileManager');
-                    $publicFileManager = new PublicFileManager();
-                    $coverPagePath = $publicFileManager->getJournalFilesPath($journal->getId()) . '/';
-                    $coverPagePath .= $coverFile;
-                    $embedNode =& XMLCustomWriter::createChildWithText($doc, $imageNode, 'embed', base64_encode($publicFileManager->readFile($coverPagePath)));
-                    XMLCustomWriter::setAttribute($embedNode, 'filename', $issue->getOriginalFileName($locale));
-                    XMLCustomWriter::setAttribute($embedNode, 'encoding', 'base64');
-                    XMLCustomWriter::setAttribute($embedNode, 'mime_type', String::mime_content_type($coverPagePath));
-                }
-                unset($coverNode);
-            }
-        }
-        XMLCustomWriter::createChildWithText($doc, $root, 'date_published', $this->formatDate($issue->getDatePublished()), false);
-        if (XMLCustomWriter::createChildWithText($doc, $root, 'access_date', $this->formatDate($issue->getOpenAccessDate()), false) == null) {
-            // This may be an open access issue. Check and flag
-            // as necessary.
-            if ( // Issue flagged as open, or subscriptions disabled
-                $issue->getAccessStatus() == ISSUE_ACCESS_OPEN ||
-                $journal->getSetting('publishingMode') == PUBLISHING_MODE_OPEN
-            ) {
-                $accessNode =& XMLCustomWriter::createElement($doc, 'open_access');
-                XMLCustomWriter::appendChild($root, $accessNode);
-            }
-        }
-        $sectionDao =& DAORegistry::getDAO('SectionDAO');
-        /*foreach ($sectionDao->getSectionsForIssue($issue->getId()) as $section) {
-            $sectionNode = $this->generateSectionDom($doc, $journal, $issue, $section);
-            XMLCustomWriter::appendChild($root, $sectionNode);
-            unset($sectionNode);
-        }*/
-        return $root;
+
     }
 
     function exportIssue(&$journal, &$issue, $outputFile = null)
@@ -258,7 +187,7 @@ class CopernicusExportPlugin extends ImportExportPlugin
         } else {
             header("Content-Type: application/xml");
             header("Cache-Control: private");
-            header("Content-Disposition: attachment; filename=\"issue-" . $issue->getId() . ".xml\"");
+            header("Content-Disposition: attachment; filename=\"copernicus-issue-" . $issue->getYear() . '-' . $issue->getNumber() . ".xml\"");
             XMLCustomWriter::printXML($doc);
         }
         return true;
