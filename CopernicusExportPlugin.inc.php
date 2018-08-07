@@ -3,8 +3,7 @@
 /**
  * @file plugins/importexport/copernicus/CopernicusExportPlugin.inc.php
  *
- * Copyright (c) 2013-2015 Simon Fraser University Library
- * Copyright (c) 2003-2015 John Willinsky
+ * Copyright (c) 2018 Oleksii Vodka
  * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
  *
  * @class CopernicusExportPlugin
@@ -13,10 +12,8 @@
  * @brief Copernicus import/export plugin
  */
 
-import('classes.plugins.ImportExportPlugin');
+import('lib.pkp.classes.plugins.ImportExportPlugin');
 import('lib.pkp.classes.xml.XMLCustomWriter');
-import('classes.file.ArticleFileManager');
-import('classes.file.PublicFileManager');
 
 
 class CopernicusExportPlugin extends ImportExportPlugin
@@ -27,11 +24,12 @@ class CopernicusExportPlugin extends ImportExportPlugin
      * @return boolean True iff plugin initialized successfully; if false,
      *    the plugin will not be registered.
      */
-    function register($category, $path)
+    function register($category, $path, $mainContextId = NULL)
     {
         $success = parent::register($category, $path);
         // Additional registration / initialization code
         // should go here. For example, load additional locale data:
+        AppLocale::requireComponents( LOCALE_COMPONENT_APP_EDITOR);
         $this->addLocaleData();
 
         // This is fixed to return false so that this coding sample
@@ -85,6 +83,7 @@ class CopernicusExportPlugin extends ImportExportPlugin
     function &generateIssueDom(&$doc, &$journal, &$issue)
     {
         $issn = $journal->getSetting('printIssn');
+        $jpath = $journal->_data['path'];
 
         $root =& XMLCustomWriter::createElement($doc, 'ici-import');
         $journal_elem = XMLCustomWriter::createChildWithText($doc, $root, 'journal', '', true);
@@ -92,19 +91,16 @@ class CopernicusExportPlugin extends ImportExportPlugin
 
         $issue_elem = XMLCustomWriter::createChildWithText($doc, $root, 'issue', '', true);
 
-
         XMLCustomWriter::setAttribute($issue_elem, 'number', $issue->getNumber());
         XMLCustomWriter::setAttribute($issue_elem, 'volume', $issue->getVolume());
         XMLCustomWriter::setAttribute($issue_elem, 'year', $issue->getYear());
 
-
         $sectionDao =& DAORegistry::getDAO('SectionDAO');
         $publishedArticleDao =& DAORegistry::getDAO('PublishedArticleDAO');
-        $articleFileDao =& DAORegistry::getDAO('ArticleFileDAO');
-        $publicFileManager = new PublicFileManager();
-        $this->import('.DOIPubIdPlugin');
-        $doiplugin = new DOIPubIdPlugin();
-        foreach ($sectionDao->getSectionsForIssue($issue->getId()) as $section) {
+        $articleFileDao =& DAORegistry::getDAO('ArticleGalleyDAO');
+        $submissionKeywordDao = DAORegistry::getDAO('SubmissionKeywordDAO');
+
+        foreach ($sectionDao->getByIssueId($issue->getId()) as $section) {
 
             foreach ($publishedArticleDao->getPublishedArticlesBySectionId($section->getId(), $issue->getId()) as $article) {
 
@@ -118,19 +114,25 @@ class CopernicusExportPlugin extends ImportExportPlugin
                     XMLCustomWriter::createChildWithText($doc, $lang_version, 'title', $article->getLocalizedTitle($loc), true);
                     XMLCustomWriter::createChildWithText($doc, $lang_version, 'abstract', $article->getLocalizedData('abstract', $loc), true);
 
-                    foreach ($articleFileDao->getArticleFilesByArticle($article->getId()) as $files) {
+                    foreach ($articleFileDao->getBySubmissionId($article->getId())->toArray() as $files) {
+
                         $url = 'http://' . $_SERVER['HTTP_HOST'] . pathinfo($_SERVER['SCRIPT_NAME'], PATHINFO_DIRNAME);
-                        $url .= '/article/viewFile/' . $article->getId() . '/' . $files->getFileId();
+                        $url .= "/index.php/$jpath/article/view/" . $article->getId() . '/' . $files->getFile()->getAssocId();
                         XMLCustomWriter::createChildWithText($doc, $lang_version, 'pdfFileUrl', $url, true);
                         break;
                     }
-                    XMLCustomWriter::createChildWithText($doc, $lang_version, 'publicationDate', $article->getDatePublished(), false);
+                    $datetime = $article->getDatePublished();
+                    $date_arr = explode(' ', $datetime);
+
+                    XMLCustomWriter::createChildWithText($doc, $lang_version, 'publicationDate',$date_arr[0], false);
                     XMLCustomWriter::createChildWithText($doc, $lang_version, 'pageFrom', $article->getStartingPage(), true);
                     XMLCustomWriter::createChildWithText($doc, $lang_version, 'pageTo', $article->getEndingPage(), true);
-                    XMLCustomWriter::createChildWithText($doc, $lang_version, 'doi', $doiplugin->getPubId($article), true);
+                    XMLCustomWriter::createChildWithText($doc, $lang_version, 'doi', $article->getStoredPubId('doi'), true);
 
                     $keywords = XMLCustomWriter::createChildWithText($doc, $lang_version, 'keywords', '', true);
-                    $kwds = $this->multiexplode(array(',', ';'), $article->getLocalizedData('subject', $loc));
+
+                    $kwds= $submissionKeywordDao->getKeywords($article->getId(), array($loc));
+                    $kwds = $kwds[$loc];
 
                     foreach ($kwds as $k) {
                         XMLCustomWriter::createChildWithText($doc, $keywords, 'keyword', $k, true);
@@ -193,15 +195,15 @@ class CopernicusExportPlugin extends ImportExportPlugin
         return true;
     }
 
-    function display(&$args, $request)
+    function display($args, $request)
     {
-        parent::display($args);
+        parent::display($args, $request);
         $issueDao =& DAORegistry::getDAO('IssueDAO');
         $journal =& $request->getJournal();
         switch (array_shift($args)) {
             case 'exportIssue':
                 $issueId = array_shift($args);
-                $issue =& $issueDao->getIssueById($issueId, $journal->getId());
+                $issue = $issueDao->getById($issueId, $journal->getId());
                 if (!$issue) $request->redirect();
                 $this->exportIssue($journal, $issue);
                 break;
@@ -210,7 +212,7 @@ class CopernicusExportPlugin extends ImportExportPlugin
                 // Display a list of issues for export
                 $journal =& Request::getJournal();
                 $issueDao =& DAORegistry::getDAO('IssueDAO');
-                $issues =& $issueDao->getIssues($journal->getId(), Handler::getRangeInfo('issues'));
+                $issues =& $issueDao->getIssues($journal->getId(), Handler::getRangeInfo($request, 'issues'));
 
                 $templateMgr =& TemplateManager::getManager();
                 $templateMgr->assign_by_ref('issues', $issues);

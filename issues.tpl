@@ -9,8 +9,8 @@
  *
  *}
 {strip}
-{assign var="pageTitle" value="plugins.importexport.sample.selectIssue.long"}
-{assign var="pageCrumbTitle" value="plugins.importexport.sample.selectIssue.short"}
+{assign var="pageTitle" value="plugins.importexport.copernicus.selectIssue.long"}
+{assign var="pageCrumbTitle" value="plugins.importexport.copernicus.selectIssue.short"}
 {include file="common/header.tpl"}
 {/strip}
 
@@ -36,7 +36,7 @@
 		<td><a href="{url page="issue" op="view" path=$issue->getId()}" class="action">{$issue->getIssueIdentification()|strip_unsafe_html|nl2br}</a></td>
 		<td>{$issue->getDatePublished()|date_format:"$dateFormatShort"|default:"&mdash;"}</td>
 		<td>{$issue->getNumArticles()|escape}</td>
-		<td align="right"><a href="{plugin_url path="exportIssue"|to_array:$issue->getId()}" class="action">{translate key="common.export"}</a></td>
+		<td align="right"><a href="{plugin_url}exportIssue/{$issue->getId()}" class="action">{translate key="common.export"}</a></td>
 	</tr>
 	<tr>
 		<td colspan="4" class="{if $issues->eof()}end{/if}separator">&nbsp;</td>
