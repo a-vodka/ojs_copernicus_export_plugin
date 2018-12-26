@@ -134,10 +134,15 @@ class CopernicusExportPlugin extends ImportExportPlugin
 
                     $kwds = $submissionKeywordDao->getKeywords($article->getId(), array($loc));
                     $kwds = $kwds[$loc];
-
+                    $j = 0;
                     foreach ($kwds as $k) {
                         XMLCustomWriter::createChildWithText($doc, $keywords, 'keyword', $k, true);
+                        $j++;
                     }
+                    if ($j == 0) {
+                        XMLCustomWriter::createChildWithText($doc, $keywords, 'keyword', " ", true);
+                    }
+
 
                 }
                 $authors_elem = XMLCustomWriter::createChildWithText($doc, $article_elem, 'authors', '', true);
