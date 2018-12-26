@@ -83,6 +83,8 @@ class CopernicusExportPlugin extends ImportExportPlugin
     function &generateIssueDom(&$doc, &$journal, &$issue)
     {
         $issn = $journal->getSetting('printIssn');
+        $issn = $issn ? $issn : $journal->getSetting('onlineIssn');
+
         $jpath = $journal->_data['path'];
 
         $root =& XMLCustomWriter::createElement($doc, 'ici-import');
