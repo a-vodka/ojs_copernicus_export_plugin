@@ -102,8 +102,7 @@ class CopernicusExportPlugin extends ImportExportPlugin
         $publishedArticleDao =& DAORegistry::getDAO('PublishedArticleDAO');
         $articleFileDao =& DAORegistry::getDAO('ArticleFileDAO');
         $publicFileManager = new PublicFileManager();
-        $this->import('.DOIPubIdPlugin');
-        $doiplugin = new DOIPubIdPlugin();
+
         foreach ($sectionDao->getSectionsForIssue($issue->getId()) as $section) {
 
             foreach ($publishedArticleDao->getPublishedArticlesBySectionId($section->getId(), $issue->getId()) as $article) {
@@ -124,10 +123,10 @@ class CopernicusExportPlugin extends ImportExportPlugin
                         XMLCustomWriter::createChildWithText($doc, $lang_version, 'pdfFileUrl', $url, true);
                         break;
                     }
-                    XMLCustomWriter::createChildWithText($doc, $lang_version, 'publicationDate', $article->getDatePublished(), false);
+                    XMLCustomWriter::createChildWithText($doc, $lang_version, 'publicationDate', $article->getDatePublished()+'T00:00:00Z', false);
                     XMLCustomWriter::createChildWithText($doc, $lang_version, 'pageFrom', $article->getStartingPage(), true);
                     XMLCustomWriter::createChildWithText($doc, $lang_version, 'pageTo', $article->getEndingPage(), true);
-                    XMLCustomWriter::createChildWithText($doc, $lang_version, 'doi', $doiplugin->getPubId($article), true);
+                    XMLCustomWriter::createChildWithText($doc, $lang_version, 'doi', $article->getStoredPubId('doi'), true);
 
                     $keywords = XMLCustomWriter::createChildWithText($doc, $lang_version, 'keywords', '', true);
                     $kwds = $this->multiexplode(array(',', ';'), $article->getLocalizedData('subject', $loc));
