@@ -85,6 +85,7 @@ class CopernicusExportPlugin extends ImportExportPlugin
     function &generateIssueDom(&$doc, &$journal, &$issue)
     {
         $issn = $journal->getSetting('printIssn');
+	$issn = $issn ? $issn : $journal->getSetting('onlineIssn');
 
         $root =& XMLCustomWriter::createElement($doc, 'ici-import');
         $journal_elem = XMLCustomWriter::createChildWithText($doc, $root, 'journal', '', true);
@@ -132,9 +133,13 @@ class CopernicusExportPlugin extends ImportExportPlugin
 
                     $keywords = XMLCustomWriter::createChildWithText($doc, $lang_version, 'keywords', '', true);
                     $kwds = $this->multiexplode(array(',', ';'), $article->getLocalizedData('subject', $loc));
-
+		    $j = 0;
                     foreach ($kwds as $k) {
                         XMLCustomWriter::createChildWithText($doc, $keywords, 'keyword', $k, true);
+			$j++;
+                    }
+		    if ($j == 0) {
+                        XMLCustomWriter::createChildWithText($doc, $keywords, 'keyword', " ", true);
                     }
 
                 }
