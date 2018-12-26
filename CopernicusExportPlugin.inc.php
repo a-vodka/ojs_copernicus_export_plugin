@@ -123,7 +123,9 @@ class CopernicusExportPlugin extends ImportExportPlugin
                         XMLCustomWriter::createChildWithText($doc, $lang_version, 'pdfFileUrl', $url, true);
                         break;
                     }
-                    XMLCustomWriter::createChildWithText($doc, $lang_version, 'publicationDate', $article->getDatePublished()+'T00:00:00Z', false);
+
+                    $pubdate = $article->getDatePublished() ? str_replace(' ', 'T', $article->getDatePublished()) . 'Z' : "";
+                    XMLCustomWriter::createChildWithText($doc, $lang_version, 'publicationDate', $pubdate, false);
                     XMLCustomWriter::createChildWithText($doc, $lang_version, 'pageFrom', $article->getStartingPage(), true);
                     XMLCustomWriter::createChildWithText($doc, $lang_version, 'pageTo', $article->getEndingPage(), true);
                     XMLCustomWriter::createChildWithText($doc, $lang_version, 'doi', $article->getStoredPubId('doi'), true);
