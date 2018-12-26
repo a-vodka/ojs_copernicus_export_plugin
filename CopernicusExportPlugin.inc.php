@@ -112,7 +112,7 @@ class CopernicusExportPlugin extends ImportExportPlugin
                     $lang_version = XMLCustomWriter::createChildWithText($doc, $article_elem, 'languageVersion', '', true);
                     XMLCustomWriter::setAttribute($lang_version, 'language', $lc[0]);
                     XMLCustomWriter::createChildWithText($doc, $lang_version, 'title', $article->getLocalizedTitle($loc), true);
-                    XMLCustomWriter::createChildWithText($doc, $lang_version, 'abstract', $article->getLocalizedData('abstract', $loc), true);
+                    XMLCustomWriter::createChildWithText($doc, $lang_version, 'abstract', strip_tags($article->getLocalizedData('abstract', $loc)), true);
 
                     foreach ($articleFileDao->getBySubmissionId($article->getId())->toArray() as $files) {
 
