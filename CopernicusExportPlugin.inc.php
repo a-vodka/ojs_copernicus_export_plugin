@@ -29,7 +29,7 @@ class CopernicusExportPlugin extends ImportExportPlugin
         $success = parent::register($category, $path);
         // Additional registration / initialization code
         // should go here. For example, load additional locale data:
-        AppLocale::requireComponents( LOCALE_COMPONENT_APP_EDITOR);
+        AppLocale::requireComponents(LOCALE_COMPONENT_APP_EDITOR);
         $this->addLocaleData();
 
         // This is fixed to return false so that this coding sample
@@ -117,21 +117,20 @@ class CopernicusExportPlugin extends ImportExportPlugin
                     foreach ($articleFileDao->getBySubmissionId($article->getId())->toArray() as $files) {
 
                         $url = 'http://' . $_SERVER['HTTP_HOST'] . pathinfo($_SERVER['SCRIPT_NAME'], PATHINFO_DIRNAME);
-                        $url .= "/index.php/$jpath/article/view/" . $article->getId() . '/' . $files->getFile()->getAssocId();
+                        $url .= "/index.php/$jpath/article/view/" . $article->getId() . '/' . $files->getSubmissionId();
                         XMLCustomWriter::createChildWithText($doc, $lang_version, 'pdfFileUrl', $url, true);
                         break;
                     }
-                    $datetime = $article->getDatePublished();
-                    $date_arr = explode(' ', $datetime);
+                    $publicationDate = $article->getDatePublished() ? str_replace(' ', "T", $article->getDatePublished()) . 'Z' : '';
 
-                    XMLCustomWriter::createChildWithText($doc, $lang_version, 'publicationDate',$date_arr[0], false);
+                    XMLCustomWriter::createChildWithText($doc, $lang_version, 'publicationDate', $publicationDate, false);
                     XMLCustomWriter::createChildWithText($doc, $lang_version, 'pageFrom', $article->getStartingPage(), true);
                     XMLCustomWriter::createChildWithText($doc, $lang_version, 'pageTo', $article->getEndingPage(), true);
                     XMLCustomWriter::createChildWithText($doc, $lang_version, 'doi', $article->getStoredPubId('doi'), true);
 
                     $keywords = XMLCustomWriter::createChildWithText($doc, $lang_version, 'keywords', '', true);
 
-                    $kwds= $submissionKeywordDao->getKeywords($article->getId(), array($loc));
+                    $kwds = $submissionKeywordDao->getKeywords($article->getId(), array($loc));
                     $kwds = $kwds[$loc];
 
                     foreach ($kwds as $k) {
@@ -148,7 +147,7 @@ class CopernicusExportPlugin extends ImportExportPlugin
                     XMLCustomWriter::createChildWithText($doc, $author_elem, 'surname', $author->getLastName(), true);
                     XMLCustomWriter::createChildWithText($doc, $author_elem, 'email', $author->getEmail(), false);
                     XMLCustomWriter::createChildWithText($doc, $author_elem, 'order', $index, true);
-                    XMLCustomWriter::createChildWithText($doc, $author_elem, 'instituteAffiliation', $author->getAffiliation(null), false);
+                    XMLCustomWriter::createChildWithText($doc, $author_elem, 'instituteAffiliation', $author->getLocalizedAffiliation(), false);
                     XMLCustomWriter::createChildWithText($doc, $author_elem, 'role', 'AUTHOR', true);
                     XMLCustomWriter::createChildWithText($doc, $author_elem, 'ORCID', $author->getData('orcid'), false);
 
