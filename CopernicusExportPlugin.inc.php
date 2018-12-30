@@ -93,15 +93,19 @@ class CopernicusExportPlugin extends ImportExportPlugin
 
         $issue_elem = XMLCustomWriter::createChildWithText($doc, $root, 'issue', '', true);
 
+        $pub_issue_date = $issue->getDatePublished() ? str_replace(' ', "T", $issue->getDatePublished()) . 'Z' : '';
+
+
         XMLCustomWriter::setAttribute($issue_elem, 'number', $issue->getNumber());
         XMLCustomWriter::setAttribute($issue_elem, 'volume', $issue->getVolume());
         XMLCustomWriter::setAttribute($issue_elem, 'year', $issue->getYear());
+        XMLCustomWriter::setAttribute($issue_elem, 'publicationDate', $pub_issue_date, false);
 
         $sectionDao =& DAORegistry::getDAO('SectionDAO');
         $publishedArticleDao =& DAORegistry::getDAO('PublishedArticleDAO');
         $articleFileDao =& DAORegistry::getDAO('ArticleGalleyDAO');
         $submissionKeywordDao = DAORegistry::getDAO('SubmissionKeywordDAO');
-
+        $num_articles = 0;
         foreach ($sectionDao->getByIssueId($issue->getId()) as $section) {
 
             foreach ($publishedArticleDao->getPublishedArticlesBySectionId($section->getId(), $issue->getId()) as $article) {
@@ -175,11 +179,11 @@ class CopernicusExportPlugin extends ImportExportPlugin
                         $index++;
                     }
                 }
-
+                $num_articles++;
             }
         }
+        XMLCustomWriter::setAttribute($issue_elem, 'numberOfArticles', $num_articles, false);
         return $root;
-
     }
 
     function exportIssue(&$journal, &$issue, $outputFile = null)
