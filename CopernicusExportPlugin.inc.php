@@ -16,8 +16,6 @@
 import('classes.plugins.ImportExportPlugin');
 import('lib.pkp.classes.xml.XMLCustomWriter');
 import('classes.file.ArticleFileManager');
-import('classes.file.PublicFileManager');
-
 
 class CopernicusExportPlugin extends ImportExportPlugin
 {
@@ -85,25 +83,24 @@ class CopernicusExportPlugin extends ImportExportPlugin
     function &generateIssueDom(&$doc, &$journal, &$issue)
     {
         $issn = $journal->getSetting('printIssn');
-	$issn = $issn ? $issn : $journal->getSetting('onlineIssn');
+        $issn = $issn ? $issn : $journal->getSetting('onlineIssn');
 
         $root =& XMLCustomWriter::createElement($doc, 'ici-import');
         $journal_elem = XMLCustomWriter::createChildWithText($doc, $root, 'journal', '', true);
         XMLCustomWriter::setAttribute($journal_elem, 'issn', $issn);
 
         $issue_elem = XMLCustomWriter::createChildWithText($doc, $root, 'issue', '', true);
-
+        $pub_issue_date = $issue->getDatePublished() ? str_replace(' ', "T", $issue->getDatePublished()) . 'Z' : '';
 
         XMLCustomWriter::setAttribute($issue_elem, 'number', $issue->getNumber());
         XMLCustomWriter::setAttribute($issue_elem, 'volume', $issue->getVolume());
         XMLCustomWriter::setAttribute($issue_elem, 'year', $issue->getYear());
-
+        XMLCustomWriter::setAttribute($issue_elem, 'publicationDate', $pub_issue_date, false);
 
         $sectionDao =& DAORegistry::getDAO('SectionDAO');
         $publishedArticleDao =& DAORegistry::getDAO('PublishedArticleDAO');
         $articleFileDao =& DAORegistry::getDAO('ArticleFileDAO');
-        $publicFileManager = new PublicFileManager();
-
+        $num_articles = 0;
         foreach ($sectionDao->getSectionsForIssue($issue->getId()) as $section) {
 
             foreach ($publishedArticleDao->getPublishedArticlesBySectionId($section->getId(), $issue->getId()) as $article) {
@@ -133,12 +130,12 @@ class CopernicusExportPlugin extends ImportExportPlugin
 
                     $keywords = XMLCustomWriter::createChildWithText($doc, $lang_version, 'keywords', '', true);
                     $kwds = $this->multiexplode(array(',', ';'), $article->getLocalizedData('subject', $loc));
-		    $j = 0;
+                    $j = 0;
                     foreach ($kwds as $k) {
                         XMLCustomWriter::createChildWithText($doc, $keywords, 'keyword', $k, true);
-			$j++;
+                        $j++;
                     }
-		    if ($j == 0) {
+                    if ($j == 0) {
                         XMLCustomWriter::createChildWithText($doc, $keywords, 'keyword', " ", true);
                     }
 
@@ -173,9 +170,10 @@ class CopernicusExportPlugin extends ImportExportPlugin
                         $index++;
                     }
                 }
-
+                $num_articles++;
             }
         }
+        XMLCustomWriter::setAttribute($issue_elem, 'numberOfArticles', $num_articles, false);
         return $root;
 
     }
