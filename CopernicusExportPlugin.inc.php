@@ -121,7 +121,7 @@ class CopernicusExportPlugin extends ImportExportPlugin
             foreach ($publishedArticleDao->getPublishedArticlesBySectionId($section->getId(), $issue->getId()) as $article) {
 
                 if (!$article->getStartingPage()) continue;
-                
+
                 $locales = array_keys($article->_data['title']);
                 $article_elem = XMLCustomWriter::createChildWithText($doc, $issue_elem, 'article', '', true);
                 XMLCustomWriter::createChildWithText($doc, $article_elem, 'type', 'ORIGINAL_ARTICLE');
@@ -135,7 +135,7 @@ class CopernicusExportPlugin extends ImportExportPlugin
                     foreach ($articleFileDao->getBySubmissionId($article->getId())->toArray() as $files) {
 
                         $url = 'http://' . $_SERVER['HTTP_HOST'] . pathinfo($_SERVER['SCRIPT_NAME'], PATHINFO_DIRNAME);
-                        $url .= "/index.php/$jpath/article/view/" . $article->getId() . '/' . $files->getSubmissionId();
+                        $url .= "/index.php/$jpath/article/view/" . $article->getId() . '/';
                         XMLCustomWriter::createChildWithText($doc, $lang_version, 'pdfFileUrl', $url, true);
                         break;
                     }

@@ -13,9 +13,10 @@
   -->
  
 <locale name="uk_UA" full_name="Ukrainian">
-       <message key="plugins.importexport.sample.displayName">Приклад модуля імпорту/експорту</message>
-       <message key="plugins.importexport.sample.description">Цей модуль пропонується як приклад для використання розробниками модулів імпорту/експорту. Сам по собі цей модуль не дуже корисний.</message>
+       <message key="plugins.importexport.copernicus.selectIssue.short">Оберіть випуск</message>
+       <message key="plugins.importexport.copernicus.selectIssue.long">Оберіть випуск для експорту.</message>
 
-       <message key="plugins.importexport.sample.selectIssue.short">Оберіть випуск</message>
-       <message key="plugins.importexport.sample.selectIssue.long">Оберіть випуск для експорту.</message>
+       <message key="plugins.importexport.copernicus.displayName">Copernicus Export Plugin</message>
+       <message key="plugins.importexport.copernicus.description">Експорт метаданих до Copernicus Citation Index.</message>
+
 </locale>

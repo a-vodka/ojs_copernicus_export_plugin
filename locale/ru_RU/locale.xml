@@ -13,9 +13,9 @@
   -->
  
 <locale name="ru_RU" full_name="Russian">
-	<message key="plugins.importexport.sample.displayName">Плагин «Образец импорта/экспорта»</message>
-	<message key="plugins.importexport.sample.description">Этот плагин является примером реализации, который может использоваться при разработке плагинов импорта/экспорта. Сам по себе этот плагин не очень полезен.</message>
+	<message key="plugins.importexport.copernicus.displayName">Copernicus Export Plugin</message>
+	<message key="plugins.importexport.copernicus.description">Экспорт метаданных в Copernicus Citation Index.</message>
 
-	<message key="plugins.importexport.sample.selectIssue.short">Выбрать выпуск</message>
-	<message key="plugins.importexport.sample.selectIssue.long">Выберите выпуск для экспорта.</message>
+	<message key="plugins.importexport.copernicus.selectIssue.short">Выбрать выпуск</message>
+	<message key="plugins.importexport.copernicus.selectIssue.long">Выберите выпусек для экспорта.</message>
 </locale>
