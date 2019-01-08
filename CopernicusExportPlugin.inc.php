@@ -80,6 +80,16 @@ class CopernicusExportPlugin extends ImportExportPlugin
         return $launch;
     }
 
+    function formatXml($simpleXMLElement)
+    {
+        $xmlDocument = new DOMDocument('1.0');
+        $xmlDocument->preserveWhiteSpace = false;
+        $xmlDocument->formatOutput = true;
+        $xmlDocument->loadXML($simpleXMLElement->saveXML());
+
+        return $xmlDocument->saveXML();
+    }
+
     function &generateIssueDom(&$doc, &$journal, &$issue)
     {
         $issn = $journal->getSetting('printIssn');
@@ -110,6 +120,8 @@ class CopernicusExportPlugin extends ImportExportPlugin
 
             foreach ($publishedArticleDao->getPublishedArticlesBySectionId($section->getId(), $issue->getId()) as $article) {
 
+                if (!$article->getStartingPage()) continue;
+                
                 $locales = array_keys($article->_data['title']);
                 $article_elem = XMLCustomWriter::createChildWithText($doc, $issue_elem, 'article', '', true);
                 XMLCustomWriter::createChildWithText($doc, $article_elem, 'type', 'ORIGINAL_ARTICLE');
@@ -153,9 +165,14 @@ class CopernicusExportPlugin extends ImportExportPlugin
                 $index = 1;
                 foreach ($article->getAuthors() as $author) {
                     $author_elem = XMLCustomWriter::createChildWithText($doc, $authors_elem, 'author', '', true);
-                    XMLCustomWriter::createChildWithText($doc, $author_elem, 'name', $author->getFirstName(), true);
-                    XMLCustomWriter::createChildWithText($doc, $author_elem, 'name2', $author->getMiddleName(), false);
-                    XMLCustomWriter::createChildWithText($doc, $author_elem, 'surname', $author->getLastName(), true);
+                    
+                    $author_FirstName = method_exists($author, "getLocalizedFirstName")? $author->getLocalizedFirstName():$author->getFirstName();
+                    $author_MiddleName = method_exists($author, "getLocalizedMiddleName")? $author->getLocalizedMiddleName():$author->getMiddleName();
+                    $author_LastName = method_exists($author, "getLocalizedLastName")? $author->getLocalizedLastName():$author->getLastName();
+
+                    XMLCustomWriter::createChildWithText($doc, $author_elem, 'name', $author_FirstName, true);
+                    XMLCustomWriter::createChildWithText($doc, $author_elem, 'name2', $author_MiddleName, false);
+                    XMLCustomWriter::createChildWithText($doc, $author_elem, 'surname', $author_LastName, true);
                     XMLCustomWriter::createChildWithText($doc, $author_elem, 'email', $author->getEmail(), false);
                     XMLCustomWriter::createChildWithText($doc, $author_elem, 'order', $index, true);
                     XMLCustomWriter::createChildWithText($doc, $author_elem, 'instituteAffiliation', $author->getLocalizedAffiliation(), false);
@@ -200,7 +217,7 @@ class CopernicusExportPlugin extends ImportExportPlugin
             header("Content-Type: application/xml");
             header("Cache-Control: private");
             header("Content-Disposition: attachment; filename=\"copernicus-issue-" . $issue->getYear() . '-' . $issue->getNumber() . ".xml\"");
-            XMLCustomWriter::printXML($doc);
+            echo $this->formatXml($doc);
         }
         return true;
     }
