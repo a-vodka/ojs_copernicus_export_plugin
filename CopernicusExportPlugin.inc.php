@@ -26,9 +26,10 @@ class CopernicusExportPlugin extends ImportExportPlugin
      */
     function register($category, $path, $mainContextId = NULL)
     {
-        $success = parent::register($category, $path);
+        $success = parent::register($category, $path, $mainContextId);
         // Additional registration / initialization code
         // should go here. For example, load additional locale data:
+        $this->addLocaleData();
         AppLocale::requireComponents(LOCALE_COMPONENT_APP_EDITOR);
         $this->addLocaleData();
 
@@ -237,13 +238,21 @@ class CopernicusExportPlugin extends ImportExportPlugin
 
             default:
                 // Display a list of issues for export
+
                 $journal =& Request::getJournal();
                 $issueDao =& DAORegistry::getDAO('IssueDAO');
-                $issues =& $issueDao->getIssues($journal->getId(), Handler::getRangeInfo($request, 'issues'));
+                $issues = $issueDao->getIssues($journal->getId(), Handler::getRangeInfo($request, 'issues'));
 
-                $templateMgr =& TemplateManager::getManager();
-                $templateMgr->assign_by_ref('issues', $issues);
-                $templateMgr->display($this->getTemplatePath() . 'issues.tpl');
+                $templateMgr = TemplateManager::getManager($request);
+
+                if (method_exists($this, "getTemplateResource")) { # for ojs >= 3.1.2
+                    $templateMgr->assignByRef('issues', $issues);
+                    $templateMgr->display($this->getTemplateResource('issues.tpl'));
+                }
+                else { #for ojs ojs < 3.1.2
+                    $templateMgr->assign_by_ref('issues', $issues);
+                    $templateMgr->display($this->getTemplatePath() . '/templates/issues.tpl');
+                }
         }
     }
 
