@@ -17,5 +17,5 @@
 	<message key="plugins.importexport.copernicus.description">Экспорт метаданных в Copernicus Citation Index.</message>
 
 	<message key="plugins.importexport.copernicus.selectIssue.short">Выбрать выпуск</message>
-	<message key="plugins.importexport.copernicus.selectIssue.long">Выберите выпусек для экспорта.</message>
+	<message key="plugins.importexport.copernicus.selectIssue.long">Выберите выпуск для экспорта.</message>
 </locale>
