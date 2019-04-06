@@ -99,6 +99,7 @@ class CopernicusExportPlugin extends ImportExportPlugin
         $jpath = $journal->_data['path'];
 
         $root =& XMLCustomWriter::createElement($doc, 'ici-import');
+
         $journal_elem = XMLCustomWriter::createChildWithText($doc, $root, 'journal', '', true);
         XMLCustomWriter::setAttribute($journal_elem, 'issn', $issn);
 
@@ -167,9 +168,26 @@ class CopernicusExportPlugin extends ImportExportPlugin
                 foreach ($article->getAuthors() as $author) {
                     $author_elem = XMLCustomWriter::createChildWithText($doc, $authors_elem, 'author', '', true);
                     
-                    $author_FirstName = method_exists($author, "getLocalizedFirstName")? $author->getLocalizedFirstName():$author->getFirstName();
-                    $author_MiddleName = method_exists($author, "getLocalizedMiddleName")? $author->getLocalizedMiddleName():$author->getMiddleName();
-                    $author_LastName = method_exists($author, "getLocalizedLastName")? $author->getLocalizedLastName():$author->getLastName();
+                    $author_FirstName = '';
+                    $author_MiddleName = '';
+                    $author_LastName = '';
+
+                    if (method_exists($author, "getLocalizedFirstName")) { # for ojs multilang by litvinovg https://github.com/litvinovg/ojs/tree/ojs-3.1.1-multilanguage
+                        $author_FirstName = $author->getLocalizedFirstName();
+                        $author_MiddleName = $author->getLocalizedMiddleName();
+                        $author_LastName = $author->getLocalizedLastName();
+                    }
+                    elseif (method_exists($author, "getLocalizedGivenName")) { # for ojs >= 3.1.2
+                        $author_FirstName = $author->getLocalizedGivenName();
+                        $author_MiddleName = '';
+                        $author_LastName = $author->getLocalizedFamilyName();
+                    }
+                    else { # for 3.0.0 < ojs < 3.1.2
+                        $author_FirstName = $author->getFirstName();
+                        $author_MiddleName = $author->getMiddleName();
+                        $author_LastName = $author->getLastName();
+                    }
+
 
                     XMLCustomWriter::createChildWithText($doc, $author_elem, 'name', $author_FirstName, true);
                     XMLCustomWriter::createChildWithText($doc, $author_elem, 'name2', $author_MiddleName, false);
@@ -208,6 +226,7 @@ class CopernicusExportPlugin extends ImportExportPlugin
     {
         //$this->import('JATSExportDom');
         $doc =& XMLCustomWriter::createDocument();
+
         $issueNode = $this->generateIssueDom($doc, $journal, $issue);
         XMLCustomWriter::appendChild($doc, $issueNode);
         if (!empty($outputFile)) {
