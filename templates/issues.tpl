@@ -36,7 +36,7 @@
 		<td><a href="{url page="issue" op="view" path=$issue->getId()}" class="action">{$issue->getIssueIdentification()|strip_unsafe_html|nl2br}</a></td>
 		<td>{$issue->getDatePublished()|date_format:"$dateFormatShort"|default:"&mdash;"}</td>
 		<td>{$issue->getNumArticles()|escape}</td>
-		<td align="right"><a href="{plugin_url}exportIssue/{$issue->getId()}" class="action">{translate key="common.export"}</a></td>
+		<td align="right"><a href="{plugin_url}exportIssue/{$issue->getId()}" class="pkp_button export">{translate key="common.export"}</a></td>
 	</tr>
 	<tr>
 		<td colspan="4" class="{if $issues->eof()}end{/if}separator">&nbsp;</td>
