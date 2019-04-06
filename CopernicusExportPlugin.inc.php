@@ -199,7 +199,7 @@ class CopernicusExportPlugin extends ImportExportPlugin
                     XMLCustomWriter::createChildWithText($doc, $author_elem, 'surname', $author_LastName, true);
                     XMLCustomWriter::createChildWithText($doc, $author_elem, 'email', $author->getEmail(), false);
                     XMLCustomWriter::createChildWithText($doc, $author_elem, 'order', $index, true);
-                    XMLCustomWriter::createChildWithText($doc, $author_elem, 'instituteAffiliation', $author->getLocalizedAffiliation(), false);
+                    XMLCustomWriter::createChildWithText($doc, $author_elem, 'instituteAffiliation', substr($author->getLocalizedAffiliation(),0,250), false);
                     XMLCustomWriter::createChildWithText($doc, $author_elem, 'role', 'AUTHOR', true);
                     XMLCustomWriter::createChildWithText($doc, $author_elem, 'ORCID', $author->getData('orcid'), false);
 
@@ -239,9 +239,10 @@ class CopernicusExportPlugin extends ImportExportPlugin
             fwrite($h, XMLCustomWriter::getXML($doc));
             fclose($h);
         } else {
+
             header("Content-Type: application/xml");
             header("Cache-Control: private");
-            header("Content-Disposition: attachment; filename=\"copernicus-issue-" . $issue->getYear() . '-' . $issue->getNumber() . ".xml\"");
+            header("Content-Disposition: attachment; filename=\"copernicus-issue-" . $journal->getLocalizedAcronym() . '-' . $issue->getYear() . '-' . $issue->getNumber() . ".xml\"");
             echo $this->formatXml($doc);
         }
         return true;
