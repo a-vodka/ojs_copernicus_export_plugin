@@ -137,13 +137,15 @@ class CopernicusExportPlugin extends ImportExportPlugin
                     XMLCustomWriter::createChildWithText($doc, $lang_version, 'title', $article->getLocalizedTitle($loc), true);
                     XMLCustomWriter::createChildWithText($doc, $lang_version, 'abstract', strip_tags($article->getLocalizedData('abstract', $loc)), true);
 
-                    foreach ($articleFileDao->getBySubmissionId($article->getId())->toArray() as $files) {
 
-                        $url = 'http://' . $_SERVER['HTTP_HOST'] . pathinfo($_SERVER['SCRIPT_NAME'], PATHINFO_DIRNAME);
-                        $url .= "/index.php/$jpath/article/view/" . $article->getId() . '/';
+                    if (is_a($article, 'PublishedArticle')) {
+                        foreach ($article->getGalleys() as $galley) {
+                            $url =  Request::url($journal->getPath()) . '/article/download/' . $article->getBestArticleId() . '/' . $galley->getBestGalleyId();
+                            break;
+                        }
                         XMLCustomWriter::createChildWithText($doc, $lang_version, 'pdfFileUrl', $url, true);
-                        break;
                     }
+
                     $publicationDate = $article->getDatePublished() ? str_replace(' ', "T", $article->getDatePublished()) . 'Z' : '';
 
                     XMLCustomWriter::createChildWithText($doc, $lang_version, 'publicationDate', $publicationDate, false);
