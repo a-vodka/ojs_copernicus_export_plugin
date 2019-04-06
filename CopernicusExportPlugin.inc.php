@@ -99,6 +99,9 @@ class CopernicusExportPlugin extends ImportExportPlugin
         $jpath = $journal->_data['path'];
 
         $root =& XMLCustomWriter::createElement($doc, 'ici-import');
+        XMLCustomWriter::setAttribute($root, "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+        XMLCustomWriter::setAttribute($root, "xsi:noNamespaceSchemaLocation", "https://journals.indexcopernicus.com/ic-import.xsd");
+
 
         $journal_elem = XMLCustomWriter::createChildWithText($doc, $root, 'journal', '', true);
         XMLCustomWriter::setAttribute($journal_elem, 'issn', $issn);
