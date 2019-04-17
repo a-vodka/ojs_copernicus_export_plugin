@@ -18,4 +18,6 @@
 
 	<message key="plugins.importexport.copernicus.selectIssue.short">Выбрать выпуск</message>
 	<message key="plugins.importexport.copernicus.selectIssue.long">Выберите выпуск для экспорта.</message>
+
+	<message key="plugins.importexport.copernicus.validate">Проверить файл</message>
 </locale>

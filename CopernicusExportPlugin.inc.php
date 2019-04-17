@@ -140,7 +140,7 @@ class CopernicusExportPlugin extends ImportExportPlugin
 
                     if (is_a($article, 'PublishedArticle')) {
                         foreach ($article->getGalleys() as $galley) {
-                            $url =  Request::url($journal->getPath()) . '/article/download/' . $article->getBestArticleId() . '/' . $galley->getBestGalleyId();
+                            $url = Request::url($journal->getPath()) . '/article/download/' . $article->getBestArticleId() . '/' . $galley->getBestGalleyId();
                             break;
                         }
                         XMLCustomWriter::createChildWithText($doc, $lang_version, 'pdfFileUrl', $url, true);
@@ -172,7 +172,7 @@ class CopernicusExportPlugin extends ImportExportPlugin
                 $index = 1;
                 foreach ($article->getAuthors() as $author) {
                     $author_elem = XMLCustomWriter::createChildWithText($doc, $authors_elem, 'author', '', true);
-                    
+
                     $author_FirstName = '';
                     $author_MiddleName = '';
                     $author_LastName = '';
@@ -181,13 +181,11 @@ class CopernicusExportPlugin extends ImportExportPlugin
                         $author_FirstName = $author->getLocalizedFirstName();
                         $author_MiddleName = $author->getLocalizedMiddleName();
                         $author_LastName = $author->getLocalizedLastName();
-                    }
-                    elseif (method_exists($author, "getLocalizedGivenName")) { # for ojs >= 3.1.2
+                    } elseif (method_exists($author, "getLocalizedGivenName")) { # for ojs >= 3.1.2
                         $author_FirstName = $author->getLocalizedGivenName();
                         $author_MiddleName = '';
                         $author_LastName = $author->getLocalizedFamilyName();
-                    }
-                    else { # for 3.0.0 < ojs < 3.1.2
+                    } else { # for 3.0.0 < ojs < 3.1.2
                         $author_FirstName = $author->getFirstName();
                         $author_MiddleName = $author->getMiddleName();
                         $author_LastName = $author->getLastName();
@@ -199,13 +197,16 @@ class CopernicusExportPlugin extends ImportExportPlugin
                     XMLCustomWriter::createChildWithText($doc, $author_elem, 'surname', $author_LastName, true);
                     XMLCustomWriter::createChildWithText($doc, $author_elem, 'email', $author->getEmail(), false);
                     XMLCustomWriter::createChildWithText($doc, $author_elem, 'order', $index, true);
-                    XMLCustomWriter::createChildWithText($doc, $author_elem, 'instituteAffiliation', substr($author->getLocalizedAffiliation(),0,250), false);
+                    XMLCustomWriter::createChildWithText($doc, $author_elem, 'instituteAffiliation', substr($author->getLocalizedAffiliation(), 0, 250), false);
                     XMLCustomWriter::createChildWithText($doc, $author_elem, 'role', 'AUTHOR', true);
                     XMLCustomWriter::createChildWithText($doc, $author_elem, 'ORCID', $author->getData('orcid'), false);
 
                     $index++;
                 }
-                $citation_text = $article->getData('citations');
+                if (method_exists($article,getLocalizedCitations))
+                    $citation_text = $article->getLocalizedCitations();
+                else
+                    $citation_text = $article->getCitations();
 
                 if ($citation_text) {
                     $citation_arr = explode("\n", $citation_text);
@@ -248,6 +249,7 @@ class CopernicusExportPlugin extends ImportExportPlugin
         return true;
     }
 
+
     function display($args, $request)
     {
         parent::display($args, $request);
@@ -259,6 +261,47 @@ class CopernicusExportPlugin extends ImportExportPlugin
                 $issue = $issueDao->getById($issueId, $journal->getId());
                 if (!$issue) $request->redirect();
                 $this->exportIssue($journal, $issue);
+                break;
+
+            case 'validateIssue':
+
+                $issueId = array_shift($args);
+                $issue = $issueDao->getById($issueId, $journal->getId());
+                if (!$issue) $request->redirect();
+
+                $doc =& XMLCustomWriter::createDocument();
+
+                $issueNode = $this->generateIssueDom($doc, $journal, $issue);
+                XMLCustomWriter::appendChild($doc, $issueNode);
+
+                $xmlDocument = new DOMDocument('1.0');
+                $xmlDocument->preserveWhiteSpace = false;
+                $xmlDocument->formatOutput = true;
+                $xmlDocument->loadXML($doc->saveXML());
+                $xmlDocument->loadXML($xmlDocument->saveXML());
+
+                // Enable user error handling
+                libxml_use_internal_errors(true);
+
+                $xmlDocument->schemaValidate($this->getPluginPath().'/ic-import.xsd');
+                $xml_lines = explode("\n", htmlentities($xmlDocument->saveXML()));
+                $xml_errors = libxml_get_errors();
+                libxml_clear_errors();
+
+                $templateMgr = TemplateManager::getManager($request);
+
+                if (method_exists($this, "getTemplateResource")) { # for ojs >= 3.1.2
+                    $templateMgr->assignByRef('xml_lines', $xml_lines);
+                    $templateMgr->assignByRef('xml_errors', $xml_errors);
+
+                    $templateMgr->display($this->getTemplateResource('validate.tpl'));
+                } else { #for ojs < 3.1.2
+                    $templateMgr->assign_by_ref('xml_lines', $xml_lines);
+                    $templateMgr->assign_by_ref('xml_errors', $xml_errors);
+
+                    $templateMgr->display($this->getTemplatePath() . '/templates/validate.tpl');
+                }
+
                 break;
 
             default:
@@ -273,8 +316,7 @@ class CopernicusExportPlugin extends ImportExportPlugin
                 if (method_exists($this, "getTemplateResource")) { # for ojs >= 3.1.2
                     $templateMgr->assignByRef('issues', $issues);
                     $templateMgr->display($this->getTemplateResource('issues.tpl'));
-                }
-                else { #for ojs ojs < 3.1.2
+                } else { #for ojs ojs < 3.1.2
                     $templateMgr->assign_by_ref('issues', $issues);
                     $templateMgr->display($this->getTemplatePath() . '/templates/issues.tpl');
                 }

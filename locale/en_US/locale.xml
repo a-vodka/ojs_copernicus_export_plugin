@@ -19,4 +19,6 @@
 	<message key="plugins.importexport.copernicus.selectIssue.long">Select an Issue to export.</message>
 
 	<message key="plugins.importexport.copernicus.selectIssue.long">Select an Issue to export.</message>
+
+	<message key="plugins.importexport.copernicus.validate">Validate file</message>
 </locale>

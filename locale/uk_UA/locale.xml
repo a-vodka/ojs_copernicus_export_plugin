@@ -19,4 +19,6 @@
        <message key="plugins.importexport.copernicus.displayName">Copernicus Export Plugin</message>
        <message key="plugins.importexport.copernicus.description">Експорт метаданих до Copernicus Citation Index.</message>
 
+       <message key="plugins.importexport.copernicus.validate">Перевірити файл</message>
+
 </locale>

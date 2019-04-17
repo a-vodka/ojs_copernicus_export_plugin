@@ -17,4 +17,6 @@
 
 	<message key="plugins.importexport.copernicus.selectIssue.short">Izberi številko</message>
 	<message key="plugins.importexport.copernicus.selectIssue.long">Izberi številko za izvoz.</message>
+
+	<message key="plugins.importexport.copernicus.validate">Overiť súbor</message>
 </locale>
