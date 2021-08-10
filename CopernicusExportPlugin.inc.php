@@ -244,7 +244,7 @@ class CopernicusExportPlugin extends ImportExportPlugin
                         $references_elem = XMLCustomWriter::createChildWithText($doc, $article_elem, 'references', '', true);
                         $index = 1;
                         foreach ($citation_arr as $citation) {
-                            if ($citation == "") continue;
+                            if (empty(trim($citation))) continue;
                             $reference_elem = XMLCustomWriter::createChildWithText($doc, $references_elem, 'reference', '', true);
                             XMLCustomWriter::createChildWithText($doc, $reference_elem, 'unparsedContent', $citation, true);
                             XMLCustomWriter::createChildWithText($doc, $reference_elem, 'order', $index, true);
