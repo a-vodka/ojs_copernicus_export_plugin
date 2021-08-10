@@ -106,7 +106,8 @@ class CopernicusExportPlugin extends ImportExportPlugin
 
         $issue_elem = XMLCustomWriter::createChildWithText($doc, $root, 'issue', '', true);
 
-        $pub_issue_date = $issue->getDatePublished() ? str_replace(' ', "T", $issue->getDatePublished()) . 'Z' : '';
+        //$pub_issue_date = $issue->getDatePublished() ? str_replace(' ', "T", $issue->getDatePublished()) . 'Z' : ''; //time cause IC error 
+        $pub_issue_date = $issue->getDatePublished() ? strtok( $issue->getDatePublished(), ' ') : '';
 
 
         XMLCustomWriter::setAttribute($issue_elem, 'number', $issue->getNumber());
@@ -173,7 +174,8 @@ class CopernicusExportPlugin extends ImportExportPlugin
                             XMLCustomWriter::createChildWithText($doc, $lang_version, 'pdfFileUrl', $url, true);
                         }
 
-                        $publicationDate = $_article->getDatePublished() . 'T00:00:00Z';
+                        //$publicationDate = $_article->getDatePublished() . 'T00:00:00Z'; //time cause IC error
+                        $publicationDate = $_article->getDatePublished();
 
                         XMLCustomWriter::createChildWithText($doc, $lang_version, 'publicationDate', $publicationDate, false);
                         XMLCustomWriter::createChildWithText($doc, $lang_version, 'pageFrom', $article->getStartingPage(), true);
@@ -181,8 +183,8 @@ class CopernicusExportPlugin extends ImportExportPlugin
                         XMLCustomWriter::createChildWithText($doc, $lang_version, 'doi', $article->getStoredPubId('doi'), true);
 
                         $keywords = XMLCustomWriter::createChildWithText($doc, $lang_version, 'keywords', '', true);
+                        $kwds = $submissionKeywordDao->getKeywords($article->getId(), array($loc)); //fix IC error
 
-                        $kwds = $submissionKeywordDao->getKeywords($_article->getId(), array($loc));
                         if ($kwds)
                             $kwds = $kwds[$loc];
                         $j = 0;
@@ -242,7 +244,7 @@ class CopernicusExportPlugin extends ImportExportPlugin
                         $references_elem = XMLCustomWriter::createChildWithText($doc, $article_elem, 'references', '', true);
                         $index = 1;
                         foreach ($citation_arr as $citation) {
-                            if ($citation == "") continue;
+                            if (empty(trim($citation))) continue;
                             $reference_elem = XMLCustomWriter::createChildWithText($doc, $references_elem, 'reference', '', true);
                             XMLCustomWriter::createChildWithText($doc, $reference_elem, 'unparsedContent', $citation, true);
                             XMLCustomWriter::createChildWithText($doc, $reference_elem, 'order', $index, true);
